@@ -1,0 +1,13 @@
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+.ruff_cache/
+mlruns/
+mlflow.db
+models/*.joblib
+metrics.json
+data/*
+!data/muestra.csv
+!data/.gitkeep
+.DS_Store

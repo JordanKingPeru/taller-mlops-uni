@@ -1,0 +1,74 @@
+# CI del proyecto MLOps — se ejecuta en cada push y pull request.
+# 4 etapas: lint -> tests -> entrenamiento smoke (con quality gate) -> build de la imagen Docker
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip install ruff
+      - name: Lint con ruff
+        run: ruff check src tests
+
+  tests:
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Tests (contrato de datos, modelo y API)
+        run: python -m pytest tests/ -v
+
+  train-smoke:
+    # Entrena con la muestra: si el pipeline de entrenamiento se rompe
+    # o el modelo no supera el quality gate (params.yaml), CI falla aquí.
+    runs-on: ubuntu-latest
+    needs: tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -r requirements.txt
+      - name: Entrenamiento smoke + quality gate
+        run: python -m src.entrenar data/muestra.csv
+      - name: Publicar métricas como artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: metrics
+          path: metrics.json
+
+  docker:
+    runs-on: ubuntu-latest
+    needs: train-smoke
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      # La imagen necesita un modelo dentro: lo entrenamos antes del build
+      - run: pip install -r requirements.txt
+      - run: python -m src.entrenar data/muestra.csv
+      - name: Build de la imagen
+        run: docker build -t churn-api:ci .
+      - name: Smoke test del contenedor
+        run: |
+          docker run -d --rm -p 8000:8000 --name api churn-api:ci
+          sleep 8
+          curl -sf http://localhost:8000/health
+          docker stop api

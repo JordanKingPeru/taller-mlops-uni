@@ -1,0 +1,27 @@
+data:
+  path: data/muestra.csv          # cámbialo a tus datos reales
+  target: churn
+  test_size: 0.2
+  features_num:
+    - edad
+    - meses_antiguedad
+    - cargo_mensual_soles
+    - gb_datos_mes
+    - minutos_llamadas_mes
+    - lineas_adicionales
+    - tickets_soporte_6m
+    - caidas_servicio_mes
+    - dias_ultimo_pago_vencido
+    - factura_electronica
+  features_cat:
+    - departamento
+    - plan
+    - tipo_contrato
+model:
+  n_estimators: 300
+  max_depth: 8
+  class_weight: balanced
+umbral_decision: 0.35             # decidido con negocio
+minimo_calidad:
+  roc_auc: 0.65                   # el "quality gate": CI falla si el modelo no lo supera
+random_state: 42
