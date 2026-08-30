@@ -85,4 +85,5 @@ make docker-build && make docker-run
 - **Los datos reales nunca van a Git** (`.gitignore`) → para versionar datos usa DVC o un data lake; aquí va solo la muestra sintética.
 
 ---
+
 *Material del taller MLOps UNI 2026 — libre para uso y adaptación.*

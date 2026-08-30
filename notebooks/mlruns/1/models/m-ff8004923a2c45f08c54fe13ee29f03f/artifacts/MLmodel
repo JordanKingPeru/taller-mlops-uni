@@ -1,0 +1,23 @@
+artifact_path: file:///c:/Users/Theki/taller-mlops-uni/notebooks/mlruns/1/models/m-ff8004923a2c45f08c54fe13ee29f03f/artifacts
+flavors:
+  python_function:
+    env:
+      conda: conda.yaml
+      virtualenv: python_env.yaml
+    loader_module: mlflow.sklearn
+    model_path: model.pkl
+    predict_fn: predict
+    python_version: 3.10.20
+  sklearn:
+    code: null
+    pickled_model: model.pkl
+    serialization_format: cloudpickle
+    sklearn_version: 1.7.2
+    skops_trusted_types: null
+mlflow_version: 3.15.2
+model_id: m-ff8004923a2c45f08c54fe13ee29f03f
+model_size_bytes: 6542598
+model_uuid: m-ff8004923a2c45f08c54fe13ee29f03f
+prompts: null
+run_id: 8b34aa61aa0744e1a151c8a235d56779
+utc_time_created: '2026-08-29 22:35:14.483787'

@@ -1,0 +1,46 @@
+{
+  "fecha_entrenamiento": "2026-08-29T22:03:42.214736+00:00",
+  "metricas_test": {
+    "roc_auc": 0.6667,
+    "f1": 0.3117,
+    "precision": 0.2452,
+    "recall": 0.4279
+  },
+  "parametros": {
+    "data": {
+      "path": "churn_telco_peru.csv",
+      "target": "churn",
+      "test_size": 0.2
+    },
+    "model": {
+      "tipo": "random_forest",
+      "n_estimators": 300,
+      "max_depth": 8,
+      "class_weight": "balanced"
+    },
+    "random_state": 42
+  },
+  "features_num": [
+    "edad",
+    "meses_antiguedad",
+    "cargo_mensual_soles",
+    "gb_datos_mes",
+    "minutos_llamadas_mes",
+    "lineas_adicionales",
+    "tickets_soporte_6m",
+    "caidas_servicio_mes",
+    "dias_ultimo_pago_vencido",
+    "factura_electronica"
+  ],
+  "features_cat": [
+    "departamento",
+    "plan",
+    "tipo_contrato"
+  ],
+  "versiones": {
+    "python": "3.10.20",
+    "scikit-learn": "1.7.2",
+    "pandas": "2.3.3"
+  },
+  "filas_entrenamiento": 6000
+}

@@ -1,0 +1,11 @@
+
+data:
+  path: churn_telco_peru.csv
+  target: churn
+  test_size: 0.2
+model:
+  tipo: random_forest
+  n_estimators: 300
+  max_depth: 8
+  class_weight: balanced
+random_state: 42
