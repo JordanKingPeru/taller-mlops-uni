@@ -1,89 +1,290 @@
-# 🚀 Plantilla de Proyecto MLOps
+# 🚀 Plantilla de Proyecto MLOps (Guía Completa para Windows y Linux)
 
-> Plantilla del taller **"MLOps en la práctica: del notebook a producción"** — UNI, Especialización en Ciencia de Datos.
-> Úsala como punto de partida para tus proyectos reales: clona, renombra y reemplaza el caso de churn por tu problema.
+![Python Version](<https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12%20%7C%203.13-blue>)
+![OS Windows](<https://img.shields.io/badge/OS-Windows%20%7C%20Linux%20%7C%20macOS-brightgreen>)
+![Docker](https://img.shields.io/badge/Docker-Opcional-orange)
+![FastAPI](https://img.shields.io/badge/FastAPI-0.115+-009688)
+![scikit-learn](https://img.shields.io/badge/scikit--learn-1.4+-orange)
 
-Estructura mínima pero completa de un proyecto de ML listo para producción: código modular, tests, entrenamiento con tracking, API de serving, Docker y CI en GitHub Actions.
+Plantilla del taller **"MLOps en la práctica: del notebook a producción"** — **UNI, Especialización en Ciencia de Datos**.
 
-## Estructura
-
-```
-plantilla-proyecto-mlops/
-├── README.md                  ← estás aquí
-├── requirements.txt           ← dependencias pinneadas
-├── params.yaml                ← TODA la configuración del proyecto (versionada)
-├── Makefile                   ← comandos estándar: make train, make test, make serve...
-├── Dockerfile                 ← imagen del servicio de predicción
-├── .github/workflows/ci.yml   ← CI: lint + tests + entrenamiento smoke + build Docker
-├── data/
-│   └── muestra.csv            ← muestra pequeña para tests y CI (los datos reales NO van a Git)
-├── src/
-│   ├── config.py              ← carga params.yaml (un solo punto de verdad)
-│   ├── datos.py               ← carga y validación de datos
-│   ├── entrenar.py            ← entrena el pipeline y guarda modelo + métricas (+ MLflow opcional)
-│   ├── evaluar.py             ← evalúa un modelo guardado contra un dataset
-│   └── servicio/app.py        ← API FastAPI de predicción
-└── tests/
-    ├── test_datos.py          ← el contrato de datos se cumple
-    ├── test_modelo.py         ← el pipeline entrena y supera un mínimo de calidad
-    └── test_api.py            ← la API responde y valida entradas
-```
-
-## Uso rápido
-
-```bash
-# 1. Crear entorno e instalar
-python -m venv .venv && source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -r requirements.txt
-
-# 2. Poner tus datos (o usa la muestra para probar)
-cp ../churn_telco_peru.csv data/  # o ajusta data.path en params.yaml
-
-# 3. Entrenar (guarda models/modelo.joblib + metrics.json, y registra en MLflow si está configurado)
-make train
-
-# 4. Tests
-make test
-
-# 5. Levantar la API
-make serve   # → http://localhost:8000/docs
-
-# 6. Docker
-make docker-build && make docker-run
-```
-
-## 🧪 Lab 4 del taller: CI/CD con GitHub Actions
-
-1. **Crea un repo en tu GitHub** (público) llamado `mi-proyecto-mlops` y sube esta carpeta:
-   ```bash
-   cd plantilla-proyecto-mlops
-   git init && git add . && git commit -m "Proyecto MLOps inicial"
-   git branch -M main
-   git remote add origin https://github.com/TU_USUARIO/mi-proyecto-mlops.git
-   git push -u origin main
-   ```
-2. Entra a la pestaña **Actions** de tu repo: verás el pipeline `CI` ejecutándose solo. Se dispara en cada push.
-3. Lee `.github/workflows/ci.yml` y ubica los 4 jobs: `lint`, `tests`, `train-smoke`, `docker`.
-4. **Rompe algo a propósito** (p. ej. en `src/datos.py` cambia un nombre de columna), haz push y mira cómo CI lo atrapa **antes** de que llegue a producción. Arréglalo y push de nuevo.
-5. Reto: agrega un job que publique `metrics.json` como *artifact* del workflow (pista: `actions/upload-artifact`).
-
-## Cómo adaptarla a TU proyecto (el lunes, en tu trabajo)
-
-1. `params.yaml` → cambia dataset, target, features y modelo.
-2. `src/datos.py` → escribe las validaciones de TU contrato de datos.
-3. `src/entrenar.py` → casi no cambia (esa es la gracia del pipeline).
-4. `src/servicio/app.py` → ajusta el esquema Pydantic a tus features.
-5. `tests/` → ajusta los tests al nuevo contrato. **No los borres: son tu red de seguridad.**
-6. Configura `MLFLOW_TRACKING_URI` hacia el servidor de tu equipo para tracking compartido.
-
-## Decisiones de diseño (y por qué)
-
-- **El preprocesamiento vive dentro del Pipeline de sklearn** → imposible el *training-serving skew*.
-- **La API carga un artefacto local (`models/modelo.joblib`)** → simple y sin dependencias externas al arrancar. Si tienes MLflow Registry en tu empresa, cambia una línea en `app.py` para cargar `models:/tu-modelo@champion`.
-- **`params.yaml` versionado en Git** → cada commit define un experimento reproducible.
-- **CI entrena un modelo "smoke" con la muestra** → si el entrenamiento se rompe, te enteras en el PR, no el día del re-entrenamiento de urgencia.
-- **Los datos reales nunca van a Git** (`.gitignore`) → para versionar datos usa DVC o un data lake; aquí va solo la muestra sintética.
+Esta guía está diseñada específicamente para funcionar **directamente en Windows (PowerShell / CMD)** sin necesidad de instalar Docker ni depender de una versión estricta de Python.
 
 ---
 
-*Material del taller MLOps UNI 2026 — libre para uso y adaptación.*
+## 📋 Tabla de Contenidos
+
+- [🎯 Visión General](#-visión-general)
+- [📁 Estructura del Proyecto](#-estructura-del-proyecto)
+- [💻 Guía Paso a Paso para Windows (Sin Docker)](#-guía-paso-a-paso-para-windows-sin-docker)
+  - [1. Crear y Activar el Entorno Virtual](#1-crear-y-activar-el-entorno-virtual)
+  - [2. Instalar Dependencias](#2-instalar-dependencias)
+  - [3. Colocar tus Datos](#3-colocar-tus-datos)
+  - [4. Entrenar el Modelo Localmente](#4-entrenar-el-modelo-localmente)
+  - [5. Ejecutar los Tests](#5-ejecutar-los-tests)
+  - [6. Levantar la API de Predicción (FastAPI)](#6-levantar-la-api-de-predicción-fastapi)
+- [⚡ Helper Script para PowerShell (`run.ps1`)](#-helper-script-para-powershell-runps1)
+- [🐳 Uso con Docker (Opcional)](#-uso-con-docker-opcional)
+- [🧪 CI/CD con GitHub Actions](#-cicd-con-github-actions)
+- [🛠️ Solución de Problemas Frecuentes (Windows Troubleshooting)](#️-solución-de-problemas-frecuentes-windows-troubleshooting)
+
+---
+
+## 🎯 Visión General
+
+El objetivo de esta plantilla es transformar un análisis de machine learning (notebook) en un servicio con **calidad de software profesional**:
+
+- **Configuración centralizada**: `params.yaml` es el único punto de verdad.
+- **Pipeline de scikit-learn**: Evita el *training-serving skew* incluyendo preprocesamiento y modelo en un único artefacto.
+- **Quality Gate**: El entrenamiento falla automáticamente si el modelo no alcanza la métrica mínima deseada.
+- **API en tiempo real**: Construida con **FastAPI** y validación de tipos mediante **Pydantic**.
+- **Tests Automatizados**: Cobertura de contrato de datos, métricas del modelo y respuestas del endpoint REST.
+
+---
+
+## 📁 Estructura del Proyecto
+
+```text
+plantilla-proyecto-mlops/
+├── README.md                  ← Guía principal del proyecto
+├── run.ps1                    ← Script de comandos rápidos para PowerShell (sustituye Make en Windows)
+├── Makefile                   ← Comandos para sistemas Unix/Linux
+├── requirements.txt           ← Dependencias compatibles (Python 3.10 - 3.13)
+├── params.yaml                ← Configuración global del proyecto (hiperparámetros, umbrales, columnas)
+├── Dockerfile                 ← Imagen para despliegue en contenedores (opcional)
+├── .github/workflows/ci.yml   ← Pipeline CI de GitHub Actions
+├── data/
+│   └── muestra.csv            ← Dataset de prueba/smoke test
+├── models/
+│   └── modelo.joblib          ← Pipeline serializado generado por entrenar.py
+├── src/
+│   ├── config.py              ← Módulo de lectura de params.yaml
+│   ├── datos.py               ← Validación del contrato de datos
+│   ├── entrenar.py            ← Pipeline de entrenamiento + persistencia + quality gate
+│   ├── evaluar.py             ← Evaluación de modelos guardados
+│   └── servicio/app.py        ← API REST en FastAPI
+└── tests/
+    ├── test_datos.py          ← Validaciones del contrato de datos
+    ├── test_modelo.py         ← Validaciones del modelo y quality gate
+    └── test_api.py            ← Validaciones de respuestas HTTP de FastAPI
+```
+
+---
+
+## 💻 Guía Paso a Paso para Windows (Sin Docker)
+
+Abre tu terminal en Windows (**PowerShell** o **CMD**) y dirígete a la carpeta `plantilla-proyecto-mlops`:
+
+```powershell
+cd plantilla-proyecto-mlops
+```
+
+### 1. Crear y Activar el Entorno Virtual
+
+> [!IMPORTANT]
+> Si en PowerShell recibes un error diciendo que la ejecución de scripts está deshabilitada, ejecuta este comando una sola vez en tu sesión de PowerShell antes de activar:
+>
+> ```powershell
+> Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+> ```
+
+**En PowerShell:**
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+```
+
+**En CMD (Símbolo del sistema):**
+
+```cmd
+python -m venv .venv
+.\.venv\Scripts\activate.bat
+```
+
+*(Sabrás que está activo porque aparecerá `(.venv)` al inicio de tu línea de comandos).*
+
+---
+
+### 2. Instalar Dependencias
+
+Actualiza `pip` e instala todas las librerías necesarias:
+
+```powershell
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+---
+
+### 3. Colocar tus Datos
+
+Puedes trabajar directamente con la muestra sintética incluida en `data/muestra.csv` o copiar el dataset completo del taller:
+
+**En PowerShell:**
+
+```powershell
+Copy-Item ..\notebooks\churn_telco_peru.csv data\
+```
+
+**En CMD:**
+
+```cmd
+copy ..\notebooks\churn_telco_peru.csv data\
+```
+
+*Si usas otro archivo o cambias de nombre, actualiza la ruta `data.path` dentro de `params.yaml`.*
+
+---
+
+### 4. Entrenar el Modelo Localmente
+
+> [!TIP]
+> **¿Por qué esto resuelve las diferencias de versión de Python?**
+> Al ejecutar `src.entrenar`, el pipeline genera un artefacto `models/modelo.joblib` entrenado y serializado **con la versión exacta de Python que tienes en tu máquina** (sea 3.10, 3.11, 3.12 o 3.13). Esto previene cualquier incompatibilidad de `joblib`/`pickle`.
+
+Ejecuta el entrenamiento:
+
+```powershell
+python -m src.entrenar
+```
+
+**Resultado esperado:**
+
+- Generación/actualización de `models/modelo.joblib`.
+- Generación de `metrics.json` con los resultados en test (`roc_auc`, `f1`, `precision`, `recall`).
+- Validación del **Quality Gate** (definido en `params.yaml`).
+
+---
+
+### 5. Ejecutar los Tests
+
+Comprueba que el contrato de datos, la lógica del modelo y los endpoints de la API funcionen correctamente:
+
+```powershell
+python -m pytest tests/ -v
+```
+
+Deberás ver los 11 tests ejecutándose en verde `PASSED`.
+
+---
+
+### 6. Levantar la API de Predicción (FastAPI)
+
+Inicia la API en servidor local usando Uvicorn:
+
+```powershell
+python -m uvicorn src.servicio.app:app --reload --host 127.0.0.1 --port 8000
+```
+
+1. **Documentación Swagger UI (Navegador):**
+   Abre tu navegador e ingresa a: **[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)**
+   Ahí podrás probar interactivamente las predicciones individuales (`POST /predict`) y en lote (`POST /predict_lote`).
+2. **Probar desde otra ventana de PowerShell:**
+
+   ```powershell
+   $body = @{
+       edad = 35
+       departamento = "Lima"
+       plan = "Prepago"
+       tipo_contrato = "Mensual"
+       meses_antiguedad = 12
+       cargo_mensual_soles = 45.0
+       gb_datos_mes = 15.0
+       minutos_llamadas_mes = 300
+       lineas_adicionales = 1
+       tickets_soporte_6m = 3
+       caidas_servicio_mes = 2
+       dias_ultimo_pago_vencido = 10
+       factura_electronica = 1
+   } | ConvertTo-Json
+
+   Invoke-RestMethod -Uri "http://127.0.0.1:8000/predict" -Method Post -Body $body -ContentType "application/json"
+   ```
+
+---
+
+## ⚡ Helper Script para PowerShell (`run.ps1`)
+
+Para mayor comodidad en Windows (sin tener que recordar los comandos largos de Python ni requerir `make`), se incluye el script `run.ps1`:
+
+| Comando               | Acción Equivalente                                 |
+| :-------------------- | :-------------------------------------------------- |
+| `.\run.ps1 train`   | `python -m src.entrenar`                          |
+| `.\run.ps1 test`    | `python -m pytest tests/ -v`                      |
+| `.\run.ps1 serve`   | `python -m uvicorn src.servicio.app:app --reload` |
+| `.\run.ps1 evaluar` | `python -m src.evaluar`                           |
+| `.\run.ps1 lint`    | `python -m ruff check src tests`                  |
+
+---
+
+## 🐳 Uso con Docker (Opcional)
+
+> [!NOTE]
+> **Docker no es necesario para desarrollar ni probar localmente en Windows.** Esta sección es únicamente si deseas empaquetar la aplicación en un contenedor para producción.
+
+Si tienes **Docker Desktop** instalado y activo en Windows:
+
+1. **Construir la imagen:**
+
+   ```powershell
+   docker build -t churn-api:latest .
+   ```
+2. **Ejecutar el contenedor:**
+
+   ```powershell
+   docker run --rm -p 8000:8000 churn-api:latest
+   ```
+
+---
+
+## 🧪 CI/CD con GitHub Actions
+
+El archivo `.github/workflows/ci.yml` ejecuta automáticamente el pipeline de integración continua al realizar un `git push` a tu repositorio de GitHub:
+
+1. **Linting**: Valida calidad de código con `ruff`.
+2. **Tests**: Ejecuta los tests unitarios con `pytest`.
+3. **Smoke Train**: Entrena un modelo rápido con `data/muestra.csv` y sube las métricas como *artifact*.
+4. **Build de Docker**: Construye y prueba la imagen Docker en los servidores de GitHub.
+
+> **¡No necesitas Docker en tu máquina personal!** GitHub Actions construirá y probará la imagen Docker en la nube de forma totalmente transparente.
+
+---
+
+## 🛠️ Solución de Problemas Frecuentes (Windows Troubleshooting)
+
+### ❌ Error: "La ejecución de scripts está deshabilitada en este sistema" (`PSSecurityException`)
+
+**Causa:** Política predeterminada de seguridad en PowerShell.
+**Solución:** Ejecuta antes de activar tu entorno:
+
+```powershell
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass
+```
+
+### ❌ Error: `InconsistentVersionWarning` o fallo al deserializar `modelo.joblib`
+
+**Causa:** Intentaste cargar un modelo `.joblib` creado en otra máquina con una versión distinta de Python o `scikit-learn`.
+**Solución:** Entrena el modelo en tu propia máquina para generar un binario nativo:
+
+```powershell
+python -m src.entrenar
+```
+
+### ❌ Error: `[Errno 10048] address already in use` al hacer `serve`
+
+**Causa:** El puerto 8000 ya está siendo utilizado por otra aplicación o un proceso anterior de Uvicorn.
+**Solución:** Cambia el puerto al levantar la API:
+
+```powershell
+python -m uvicorn src.servicio.app:app --port 8050
+```
+
+### ❌ Error: "No module named src" al ejecutar comandos
+
+**Causa:** Estás ejecutando el comando desde una subcarpeta en lugar de la raíz `plantilla-proyecto-mlops`.
+**Solución:** Asegúrate de estar en `plantilla-proyecto-mlops` y usa la sintaxis `python -m src.entrenar`.
+
+---
+
+*Material del taller MLOps UNI 2026 — Optimizado para Windows y producción local.*
