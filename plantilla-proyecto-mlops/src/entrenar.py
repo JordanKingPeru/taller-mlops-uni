@@ -11,13 +11,12 @@ import json
 import os
 import platform
 import sys
+from contextlib import suppress
 from datetime import datetime, timezone
 
 if hasattr(sys.stdout, "reconfigure"):
-    try:
+    with suppress(AttributeError, OSError):
         sys.stdout.reconfigure(encoding="utf-8")
-    except Exception:
-        pass
 
 import joblib
 import sklearn
